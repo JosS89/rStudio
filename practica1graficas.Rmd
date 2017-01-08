@@ -1,0 +1,104 @@
+---
+title: "PracticaOne"
+author: "JosS"
+date: "2 de enero de 2017"
+output: pdf_document
+---
+
+```{r}
+setwd("C:/Users/Joss/Desktop/student")
+tabla.mat <- read.table("student-mat.csv", sep = ";", header=TRUE)
+table(head(tabla.mat[,1:5]))
+
+tabla.por <- read.table("student-por.csv", sep = ";", header=TRUE)
+table(head(tabla.por[,1:5]))
+
+union.mat.por<- merge (tabla.mat, tabla.por,
+                        by=c("school","sex","age","address","famsize","Pstatus",
+                             "Medu","Fedu","Mjob","Fjob","reason","nursery","internet","studytime")
+                       )
+##análisis descriptivo:
+summary(union.mat.por) 
+   # Las medidas de los campos que vamos a analizar:
+   # en el estudio tenemos un total de 198 mujeres y 184 varones, 
+   # la edad va desde los 15 años hasta los 22
+   # hay 278 familias con más de 3 miembros y 104 con 3 o menos miembros
+   # en el primer cuatrimestre las notas de las asignaturas varian desde el 0 hasta 19 puntos, con una media de 12 puntos
+   # 91 alumnos tienen a su padre como tutor, 275 a su madre y 16 a otra persona.
+
+
+##análisis exploratorio:
+grupo <- dplyr::select(union.mat.por, sex,age, famsize, guardian.x, G1.y, G3.y, studytime)
+le3<- dplyr::filter(grupo, famsize == "LE3")
+
+le <- le3[order(le3$age),]
+le$studytime <- factor(le$studytime)
+le$color[le$studytime==1] <- "red"
+le$color[le$studytime==2] <- "blue"
+le$color[le$studytime==3] <- "pink"
+le$color[le$studytime==4] <- "green"
+dotchart(le$age, labels=row.names(le), cex=.7, groups=le$studytime, color=le$color)
+
+```
+
+```{r}
+le$studytime
+gt3 <- dplyr::filter(grupo, famsize == "GT3")
+ss<- dplyr::select(gt3, G3.y)
+edad<- dplyr::select(gt3, age)
+ee <- dplyr::arrange(gt3, edad)
+plot(edad, ss$G3.y, col="purple")
+
+boxplot(382,data=union.mat.por, main="Car Milage Data", 
+        xlab="Number of Cylinders", ylab="Miles Per Gallon")
+```
+
+```{r}
+#tabla horiz
+notasPrimerTri <- table(grupo$G1.y)
+barplot(notasPrimerTri, main="Notas 1 Trimestre", horiz=TRUE, col="orange")
+```
+
+```{r}
+#violin Plots
+library(vioplot)
+x1 <- grupo$G1.y[grupo$studytime==1]
+x2 <- grupo$G1.y[grupo$studytime==2]
+x3 <- grupo$G1.y[grupo$studytime==3]
+x4 <- grupo$G1.y[grupo$studytime==4]
+vioplot(x1, x2, x3, x4, names=c("1 hora", "2 horas", "3 horas", "4 horas"), 
+        col="gold")
+
+```
+
+```{r}
+grupo
+library(devtools)
+
+require(ggbiplot)
+# wine Example
+{
+  
+  data(le3)
+  le3.prueba <- prcomp(le3, scale = TRUE)
+  ggbiplot(le3.prueba, obs.scale = 1, var.scale = 1,
+           groups = le3.class, ellipse = TRUE, circle = TRUE) +
+    scale_color_discrete(name = '') +
+    theme(legend.direction = 'horizontal', legend.position = 'top')   ##Grafica bonita de circulos de colorines
+  
+  plot(le3.prueba)
+  plot(cumsum(le3.prueba$sdev^2/sum(wine.pca$sdev^2))) 
+}
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(lattice) 
+ggplot(filter(le, sex=='F'), aes(x=age, y=..density..)) +
+  geom_histogram(fill="cornsilk", colour="grey60", binwidth=1, ) +
+  geom_density() + xlim(13, 20)
+
+
+
