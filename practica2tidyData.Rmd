@@ -1,0 +1,82 @@
+---
+title: "RawATidyData"
+author: "JosS"
+date: "8 de enero de 2017"
+output: pdf_document
+---
+
+
+```{r }
+###ORDENAR DATOS
+setwd("C:/Users/Joss/Desktop/student")
+datosLimpiar <- file("DataToLimpiar.csv","r")
+limpiar <- read.csv2(datosLimpiar, sep = ",")
+close(datosLimpiar)
+```
+
+```{r}       
+#cambiar nombre columnas
+colnames(limpiar) <- c("Year", "Area", "Street", "Street 2", "Strange HTML")
+```
+
+```{r}
+#quitar espacio del primer caracter
+limpiar$Street <- sub(" " , "",limpiar$Street)
+```
+
+```{r}
+#quitar caracteres raros por espacios
+limpiar$Street <- gsub("[^a-zA-Z0-9,./]", " " ,limpiar$Street)
+```
+
+```{r}
+#unescape HTML
+library(xml2)
+unescape_html <- function(str){
+  xml2::xml_text(xml2::read_html(paste0("<x>", str, "</x>")))
+}
+
+  #necesito crear la variable test para usarla en el bucle for
+test <- 0
+for (i in 1:5279){
+  test[i]<- unescape_html ( limpiar$`Strange HTML`[i])
+}
+
+limpiar$`Strange HTML` <- test
+```
+
+```{r}
+
+#arrastrar el nombre de la celda a la de abajo (si esta vacia)
+   #para ello tengo q convertir las celdas vacias en NA primero
+
+limpiar$Area[limpiar$Area == ""] <- NA
+library(zoo)
+limpiar$Area <- na.locf(limpiar$Area)
+```
+
+```{r}
+#borrar columna Street 2 (esta repetida con Street)
+limpiar$`Street 2` <- NULL
+```
+
+```{r}
+#Vemos el resultado, dataframe limpio y ordenado
+View(limpiar)
+
+#exportamos el resultado a la carpeta output
+
+outputDir <- "./output"
+
+if (!file.exists(outputDir)) {
+                 dir.create(outputDir)
+                 }
+
+write.table(limpiar,
+            file=paste(outputDir,
+                       "DataFrameTidy.csv",
+                       sep="/"),
+            sep=",",row.names=FALSE)
+```
+
+
